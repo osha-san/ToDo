@@ -94,7 +94,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
-echo [3/3] Compilation successful! ✓
+echo [3/3] Compilation successful! 
 echo.
 echo =======================================
 echo   Starting Web Server...

@@ -33,13 +33,19 @@ build.bat
 ```batch
 build_web.bat
 ```
-Then open: `http://localhost:8080`
+Then open: `http://localhost:8081`
+
 
 ## 📸 Screenshots
 
 ![CLI Version](./assets/CLI%20VERSION/Capture.JPG)
 ![CLI Version](./assets/CLI%20VERSION/Capture1.JPG)
-![Web Version](screenshots/web.png)
+![Web Version](./assets/WEB%20VERSION/Capture.JPG)
+![Web Version](/assets/WEB%20VERSION/Capture1.JPG)
+![Web Version](/assets/WEB%20VERSION/Capture2.JPG)
+
+
+
 
 ## 🎓 Learning Outcomes
 

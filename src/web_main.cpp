@@ -1,15 +1,21 @@
-// src/web_main.cpp - COMPLETE VERSION
+// src/web_main.cpp - FIXED VERSION
+
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0601  // Target Windows 7+
+#endif
+
 #include "../include/crow_all.h"
-#include "../include/json.hpp"
 #include "TaskManager.h"
 #include <fstream>
+#include <asio.hpp>
 #include <sstream>
-
-using json = nlohmann::json;
 
 // Helper function to read file contents
 std::string readFile(const std::string& path) {
     std::ifstream file(path);
+    if (!file.is_open()){
+        return "File not found: " + path;
+    }
     std::stringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();
@@ -44,48 +50,90 @@ int main() {
         return res;
     });
     
-    // API: Get all tasks
+    // API: Handle /api/tasks - GET and POST
     CROW_ROUTE(app, "/api/tasks")
-    ([&manager]() {
-        auto tasks = manager.getAllTasks();
-        json j = json::array();
-        
-        for (const auto& task : tasks) {
-            j.push_back({
-                {"id", task.getId()},
-                {"description", task.getDescription()},
-                {"completed", task.isCompleted()}
-            });
+    .methods(crow::HTTPMethod::Get, crow::HTTPMethod::Post, crow::HTTPMethod::Options)
+    ([&manager](const crow::request& req) {
+        // Handle CORS preflight
+        if (req.method == crow::HTTPMethod::Options) {
+            crow::response res(200);
+            res.add_header("Access-Control-Allow-Origin", "*");
+            res.add_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            res.add_header("Access-Control-Allow-Headers", "Content-Type");
+            return res;
         }
         
-        crow::response res(j.dump());
-        res.add_header("Content-Type", "application/json");
+        // Handle GET - Get all tasks
+        if (req.method == crow::HTTPMethod::Get) {
+            auto tasks = manager.getAllTasks();
+            
+            crow::json::wvalue json_array;
+            json_array = crow::json::wvalue::list();
+
+            for (size_t i = 0; i < tasks.size(); i++){
+                crow::json::wvalue task_json;
+                task_json["id"] = tasks[i].getId();
+                task_json["description"] = tasks[i].getDescription();
+                task_json["completed"] = tasks[i].isCompleted();
+                json_array[i] = std::move(task_json);
+            }
+            
+            crow::response res(json_array);
+            res.add_header("Content-Type", "application/json");
+            res.add_header("Access-Control-Allow-Origin", "*");
+            return res;
+        }
+        
+        // Handle POST - Add task
+        if (req.method == crow::HTTPMethod::Post) {
+            try {
+                auto body = crow::json::load(req.body);
+                if(!body){
+                    crow::response res(400, "Invalid JSON");
+                    res.add_header("Access-Control-Allow-Origin", "*");
+                    return res;
+                }
+                
+                std::string description = body["description"].s();
+
+                if(description.empty()){
+                    crow::response res(400, "Description cannot be empty");
+                    res.add_header("Access-Control-Allow-Origin", "*");
+                    return res;
+                }
+
+                manager.addTask(description);
+                
+                crow::response res(200, "Task added successfully");
+                res.add_header("Access-Control-Allow-Origin", "*");
+                res.add_header("Content-Type", "application/json");
+                return res;
+            } catch (const std::exception& e) {
+                crow::response res(400, std::string("Error: ") + e.what());
+                res.add_header("Access-Control-Allow-Origin", "*");
+                return res;
+            }
+        }
+        
+        // Default response
+        crow::response res(405, "Method not allowed");
         res.add_header("Access-Control-Allow-Origin", "*");
         return res;
     });
     
-    // API: Add task
-    CROW_ROUTE(app, "/api/tasks")
-    .methods("POST"_method)
-    ([&manager](const crow::request& req) {
-        try {
-            auto body = json::parse(req.body);
-            std::string description = body["description"];
-            
-            manager.addTask(description);
-            
-            crow::response res(200, "Task added");
-            res.add_header("Access-Control-Allow-Origin", "*");
-            return res;
-        } catch (const std::exception& e) {
-            return crow::response(400, "Invalid request");
-        }
-    });
-    
-    // API: Toggle complete
+    // API: Toggle task completion 
     CROW_ROUTE(app, "/api/tasks/<int>/toggle")
-    .methods("PUT"_method)
-    ([&manager](int id) {
+    .methods(crow::HTTPMethod::Put, crow::HTTPMethod::Options)
+    ([&manager](const crow::request& req, int id) {
+        // Handle CORS preflight
+        if (req.method == crow::HTTPMethod::Options) {
+            crow::response res(200);
+            res.add_header("Access-Control-Allow-Origin", "*");
+            res.add_header("Access-Control-Allow-Methods", "PUT, OPTIONS");
+            res.add_header("Access-Control-Allow-Headers", "Content-Type");
+            return res;
+        }
+        
         manager.toggleComplete(id);
         crow::response res(200, "Task updated");
         res.add_header("Access-Control-Allow-Origin", "*");
@@ -94,22 +142,20 @@ int main() {
     
     // API: Delete task
     CROW_ROUTE(app, "/api/tasks/<int>")
-    .methods("DELETE"_method)
-    ([&manager](int id) {
+    .methods(crow::HTTPMethod::Delete, crow::HTTPMethod::Options)
+    ([&manager](const crow::request& req, int id) {
+        // Handle CORS preflight
+        if (req.method == crow::HTTPMethod::Options) {
+            crow::response res(200);
+            res.add_header("Access-Control-Allow-Origin", "*");
+            res.add_header("Access-Control-Allow-Methods", "DELETE, OPTIONS");
+            res.add_header("Access-Control-Allow-Headers", "Content-Type");
+            return res;
+        }
+        
         manager.deleteTask(id);
         crow::response res(200, "Task deleted");
         res.add_header("Access-Control-Allow-Origin", "*");
-        return res;
-    });
-    
-    // CORS preflight
-    CROW_ROUTE(app, "/api/tasks")
-    .methods("OPTIONS"_method)
-    ([]() {
-        crow::response res(200);
-        res.add_header("Access-Control-Allow-Origin", "*");
-        res.add_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-        res.add_header("Access-Control-Allow-Headers", "Content-Type");
         return res;
     });
     
@@ -117,11 +163,11 @@ int main() {
     std::cout << "  TO-DO LIST WEB SERVER RUNNING\n";
     std::cout << "======================================\n";
     std::cout << "\n";
-    std::cout << "🌐 Open your browser and visit:\n";
-    std::cout << "   http://localhost:8080\n";
+    std::cout << " Open your browser and visit:\n";
+    std::cout << "   http://localhost:8081\n";
     std::cout << "\n";
     std::cout << "Press Ctrl+C to stop the server\n";
     std::cout << "======================================\n\n";
     
-    app.port(8080).multithreaded().run();
+    app.port(8081).multithreaded().run();
 }
