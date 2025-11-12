@@ -38,13 +38,15 @@ Then open: `http://localhost:8081`
 
 ## 📸 Screenshots
 
+### CLI VERSION
+
 ![CLI Version](./assets/CLI%20VERSION/Capture.JPG)
 ![CLI Version](./assets/CLI%20VERSION/Capture1.JPG)
+
+### WEB VERSION
 ![Web Version](./assets/WEB%20VERSION/Capture.JPG)
 ![Web Version](/assets/WEB%20VERSION/Capture1.JPG)
 ![Web Version](/assets/WEB%20VERSION/Capture2.JPG)
-
-
 
 
 ## 🎓 Learning Outcomes
