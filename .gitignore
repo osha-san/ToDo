@@ -1,0 +1,25 @@
+# Executables
+*.exe
+*.out
+*.app
+
+# Build artifacts
+*.o
+*.obj
+*.dll
+*.so
+*.dylib
+
+# Data files (optional - keep CSV for demo)
+# data/tasks.csv
+
+# IDE files
+.vscode/
+.vs/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
