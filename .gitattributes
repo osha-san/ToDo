@@ -1,0 +1,12 @@
+# Set default behavior for all text files
+* text=auto
+
+# Ensure all files that must use LF (like shell scripts) are set explicitly
+*.sh text eol=lf
+
+# Ensure Windows-specific files (like solution files) use CRLF
+*.sln text eol=crlf
+
+# Do not treat binary files as text
+*.png binary
+*.jpg binary
